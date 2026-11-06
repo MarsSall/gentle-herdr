@@ -1,0 +1,28 @@
+{
+  "name": "gentle-herdr",
+  "version": "0.1.0",
+  "description": "Standalone Herdr visuals for Pi",
+  "type": "module",
+  "license": "MIT",
+  "keywords": ["pi-package"],
+  "engines": { "node": ">=22" },
+  "pi": { "extensions": ["./extensions/gentle-herdr.ts"] },
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "@earendil-works/pi-ai": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.5.0",
+    "@earendil-works/pi-tui": "1.5.0",
+    "@earendil-works/pi-ai": "1.5.0",
+    "typebox": "1.4.5",
+    "typescript": "7.0.2",
+    "@types/node": "22.20.5"
+  }
+}
