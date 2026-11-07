@@ -259,3 +259,11 @@ test("neutral Gentle Default adds only its Dots panel background", () => {
 	assert.equal("surface0" in custom, false);
 	rejected('', { ...neutral, theme: { ...neutral.theme, custom: { ...neutral.theme.custom!, surface0: "#123456" } } });
 });
+
+test("Gentleman-Sexy Default plans its own active row and sidebar text colors", () => {
+	const sexy = { ...projection, theme: projectHerdrTheme({ name: "Gentleman-Sexy", colors: palette } as any, "default") };
+	const on = accepted("[theme]\nname = \"catppuccin\"\n", sexy);
+	const custom = parse(on.text).theme.custom;
+	assert.deepEqual([custom.overlay0, custom.overlay1, custom.active_row_bg, custom.selection_bg], ["#D9709F", "#FF4F9A", "#2E0F1F", "#2E0F1F"]);
+	assert.deepEqual(plan(on.text, sexy), { ok: true, text: on.text, changed: false });
+});

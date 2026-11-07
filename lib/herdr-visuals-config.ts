@@ -17,7 +17,8 @@ const SURFACE_TOKENS = ["surface0", "surface1", "surface_dim"];
 const TOKENS = [...LEGACY_TOKENS, ...TEXT_TOKENS, ...SURFACE_TOKENS];
 const TEXT8 = ["accent", "text", "red", "green", "subtext0", "overlay0", "overlay1", "mauve"];
 const CUSTOM_SETS = [LEGACY_TOKENS, ["accent", "text", "red", "green"], ["accent", "text", "red", "green", ...TEXT_TOKENS],
-	TEXT8, [...TEXT8, "panel_bg"], [...TEXT8, "panel_bg", ...SURFACE_TOKENS]];
+	TEXT8, [...TEXT8, "panel_bg"], [...TEXT8, "panel_bg", ...SURFACE_TOKENS],
+	[...TEXT8, "panel_bg", ...SURFACE_TOKENS, "active_row_bg", "selection_bg"]];
 // Historical projections used catppuccin; Default now uses the Gentleman.Dots base.
 const CUSTOM_BASES = ["catppuccin", "one-dark"];
 const TABLE = "ui.sidebar.agents.rows_by_agent";
