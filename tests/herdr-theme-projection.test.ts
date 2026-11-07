@@ -112,7 +112,7 @@ test("default adds the Gentleman.Dots fixed values that the Gentle palette does 
 	const cute = { panel_bg: "#000000", surface0: "#241822", surface1: "#342230", surface_dim: "#20161E", overlay0: "#B99AA9" };
 	assert.deepEqual(projectHerdrTheme({ ...palette(), name: "Gentleman-Cute" }, "default"), { name: "one-dark", custom: { ...expected, ...cute } });
 	// Sexy keeps Cute's surfaces but shows its own hot pink in sidebar text, details and the active row.
-	const sexy = { ...cute, overlay0: "#D9709F", overlay1: "#FF4F9A", active_row_bg: "#2E0F1F", selection_bg: "#2E0F1F" };
+	const sexy = { ...cute, overlay0: "#FF4F9A", overlay1: "#B99AA9", active_row_bg: "#2E0F1F", selection_bg: "#2E0F1F" };
 	assert.deepEqual(projectHerdrTheme({ ...palette(), name: "Gentleman-Sexy" }, "default"), { name: "one-dark", custom: { ...expected, ...sexy } });
 	assert.deepEqual(projectHerdrTheme({ ...palette(), name: "Gentle" }, "default"), { name: "one-dark", custom: { ...expected, panel_bg: "#06080f" } });
 	for (const name of ["dark", "light", "Other-Theme", undefined]) {

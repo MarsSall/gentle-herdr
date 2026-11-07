@@ -16,8 +16,8 @@ type Projection = { name: HerdrNativeTheme; custom?: Record<HerdrForeground, str
 // uses the gentleman profile. Other Pi themes get none.
 const DOTS_CUTE = { panel_bg: "#000000", surface0: "#241822", surface1: "#342230", surface_dim: "#20161E", overlay0: "#B99AA9" };
 // Sexy shares Cute's surfaces, but its palette only differs in the accent, so it
-// also gets its own hot pink sidebar text, detail text and wine active row.
-const DOTS_SEXY = { ...DOTS_CUTE, overlay0: "#D9709F", overlay1: "#FF4F9A", active_row_bg: "#2E0F1F", selection_bg: "#2E0F1F" };
+// also gets fuchsia sidebar text, grayish pink detail text and a wine active row.
+const DOTS_SEXY = { ...DOTS_CUTE, overlay0: "#FF4F9A", overlay1: "#B99AA9", active_row_bg: "#2E0F1F", selection_bg: "#2E0F1F" };
 const DOTS_FIXED: Readonly<Record<string, Readonly<Partial<Record<HerdrBackground | "overlay0" | "overlay1", string>>>>> = {
 	"Gentleman-Cute": DOTS_CUTE, "Gentleman-Sexy": DOTS_SEXY, Gentle: { panel_bg: "#06080f" },
 };
