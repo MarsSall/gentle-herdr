@@ -10,13 +10,13 @@ pi install git:github.com/MarsSall/gentle-herdr
 
 In an interactive Pi terminal running inside a supported local Herdr pane, run `/gentle:herdr`:
 
-- **Theme** — Default plus every supported native Herdr theme; the current preference is marked.
+- **Theme** — Default follows your active Gentle Shell theme (named in the menu), plus every supported native Herdr theme; the current preference is marked.
 - **Summary color** — Default or accent, text, muted, dim, success, warning, error.
 - **Apply now** — apply the saved preferences again.
 - **Remove from Herdr config** — remove package-owned blocks without deleting preferences.
 - **Close** — leave without changes.
 
-Selecting a theme or color opens a preview/confirmation. Confirmation saves the preference **first**, then applies it locally. A changed config requests `herdr server reload-config`; the notice distinguishes requested, unchanged, unavailable, config failure and reload failure. “Reload requested” is not proof that the client rendered the result.
+Theme and Summary color lists update a preview as you move the highlight with Up/Down. Default shows a mock sidebar using the live Gentle Shell projection, including secondary text and both summary rows; summary colors preview both rows. Native themes describe Herdr's built-in theme by name, without invented palette colors; summary previews for native themes use the terminal default background. The preview is illustrative: Herdr's native status colors and your custom overrides may differ. Enter opens confirmation; Esc cancels. Older hosts without custom UI fall back to a standard list and confirmation preview. Highlighting never saves or applies. Confirmation saves the preference **first**, then applies it locally. A changed config requests `herdr server reload-config`; the notice distinguishes requested, unchanged, unavailable, config failure and reload failure. “Reload requested” is not proof that the client rendered the result.
 
 Preferences live in `gentle-herdr.json` inside Pi's SDK `getAgentDir()` directory. Malformed or unreadable preferences are refused, not overwritten. Opening the menu or cancelling a preview writes nothing.
 

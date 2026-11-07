@@ -29,10 +29,61 @@ export function fixture(choices: (string | undefined)[] = []) {
 test("choices include every native theme and summary color, marked current; cancellation writes nothing", async () => {
  const h = fixture(["Theme", undefined, "Summary color", undefined, "Close"]);
  await openHerdrVisualsMenu(h.ctx, h.deps);
- assert.deepEqual(h.lists[1], ["Default (current)", ...HERDR_NATIVE_THEMES]);
+ assert.deepEqual(h.lists[1], ["Default (follows your Gentle Shell theme: dark) (current)", ...HERDR_NATIVE_THEMES]);
+ assert.equal(h.lists[0]![0], "Theme: Default (follows your Gentle Shell theme: dark)");
  assert.deepEqual(h.lists[3], ["Default (current)", ...HERDR_SUMMARY_COLORS]);
  assert.doesNotMatch(h.lists.flat().join("\n"), /Task summary: (on|off)/);
  assert.deepEqual(h.order, []);
+});
+
+test("missing theme name has a readable Default label", async () => {
+ const h = fixture(["Theme", undefined, "Close"]);
+ Object.assign(h.ctx.ui.theme, { name: undefined });
+ await openHerdrVisualsMenu(h.ctx, h.deps);
+ assert.equal(h.lists[0]![0], "Theme: Default (follows your Gentle Shell theme)");
+ assert.equal(h.lists[1]![0], "Default (follows your Gentle Shell theme) (current)");
+});
+
+test("custom highlighting and cancelling never writes or applies", async () => {
+ const h = fixture(["Theme", "Summary color", "Close"]);
+ let calls = 0;
+ h.ctx.ui.custom = async factory => {
+  calls++;
+  let result: unknown;
+  const component = await factory({ requestRender() {} } as never, h.ctx.ui.theme,
+   { matches: (data: string, key: string) => data === key } as never, value => { result = value; });
+  component.handleInput?.("tui.select.down");
+  assert.match(component.render(100).join("\n"), calls === 1 ? /built-in/ : /Continue the same task title/);
+  assert.deepEqual(h.order, []);
+  component.handleInput?.("tui.select.cancel");
+  return result as never;
+ };
+ await openHerdrVisualsMenu(h.ctx, h.deps);
+ assert.equal(calls, 2);
+ assert.deepEqual(h.order, []);
+ assert.deepEqual(h.confirms, []);
+});
+
+test("custom Enter still confirms and saves before applying; remote guard remains", async () => {
+ for (const remote of [false, true]) {
+  const h = fixture(["Theme", "Close"]);
+  if (remote) h.deps.availability = () => ({ available: false, reason: "remote" });
+  h.ctx.ui.custom = async factory => {
+   let result: unknown;
+   const component = await factory({ requestRender() {} } as never, h.ctx.ui.theme,
+    { matches: (data: string, key: string) => data === key } as never, value => { result = value; });
+   component.handleInput?.("tui.select.down");
+   assert.deepEqual(h.order, []);
+   component.handleInput?.("tui.select.confirm");
+   return result as never;
+  };
+  await openHerdrVisualsMenu(h.ctx, h.deps);
+  assert.equal(h.confirms.length, 1);
+  assert.match(h.confirms[0]!, /built-in catppuccin/);
+  assert.deepEqual(h.order, remote ? ["save"] : ["save", "apply"]);
+  assert.equal(h.settings().theme, "catppuccin");
+  if (remote) assert.match(h.confirms[0]!, /client machine.*own config/);
+ }
 });
 
 test("consent re-reads preferences and saves before applying the live palette", async () => {

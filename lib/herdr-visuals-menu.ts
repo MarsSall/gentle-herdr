@@ -5,7 +5,8 @@ import { HERDR_SUMMARY_COLORS, resolveHerdrVisualsSettings, writeHerdrVisualsSet
 import { applyHerdrVisualsPreferences, removeHerdrVisualsBlocks, localHerdrVisualsApplication,
  localHerdrVisualsAvailability, type HerdrVisualsApplication, type HerdrVisualsAvailability,
  type HerdrVisualsApplicationResult } from "./herdr-visuals-application.ts";
-import { projectHerdrTaskSummaryStyle } from "./herdr-theme-projection.ts";
+import { buildHerdrPreview, defaultHerdrLabel } from "./herdr-preview.ts";
+import { createHerdrChoiceList } from "./herdr-choice-list.ts";
 
 // Ported from the original Gentle Shell Herdr card; no Gentle Shell internals.
 export const HERDR_REMOTE_PREVIEW = "Remote session: Herdr reads theme and sidebar from the client machine's own config; nothing will be applied from here. Run /gentle:herdr on that machine.";
@@ -54,7 +55,7 @@ export async function openHerdrVisualsMenu(ctx: ExtensionContext, deps = herdrMe
  for (;;) {
   const current = deps.read();
   const healthy = !current.malformed && !current.readError;
-  const entries = [`Theme: ${healthy ? current.settings.theme : "unavailable"}`, `Summary color: ${healthy ? current.settings.summaryColor : "unavailable"}`,
+  const entries = [`Theme: ${healthy ? current.settings.theme === "default" ? defaultHerdrLabel(ctx.ui.theme) : current.settings.theme : "unavailable"}`, `Summary color: ${healthy ? current.settings.summaryColor : "unavailable"}`,
    "Apply now", "Remove from Herdr config", "Close"];
   const choice = await ctx.ui.select(`Herdr visuals\n${scope(deps)}`, entries);
   if (choice === undefined || choice === "Close") return;
@@ -63,19 +64,23 @@ export async function openHerdrVisualsMenu(ctx: ExtensionContext, deps = herdrMe
     const key = choice === entries[0] ? "theme" : "summaryColor";
     const settings = checkedHerdrSettings(deps);
     const values = ["default", ...(key === "theme" ? HERDR_NATIVE_THEMES : HERDR_SUMMARY_COLORS)];
-    const labels = values.map(value => `${value === "default" ? "Default" : value}${value === settings[key] ? " (current)" : ""}`);
-    const selected = await ctx.ui.select(`${key === "theme" ? "Theme" : "Summary color"}\n${scope(deps)}`, labels);
-    const index = selected === undefined ? -1 : labels.indexOf(selected);
-    if (index < 0) continue;
-    const value = values[index]!;
-    let preview: string;
-    if (key === "theme") preview = value === "default"
-     ? "Follows Gentle Shell: live text colors over one-dark plus Gentleman.Dots profile values; not applied yet."
-     : `Native Herdr theme: ${value}; palette preview unavailable; not applied yet.`;
-    else {
-     const style = projectHerdrTaskSummaryStyle(ctx.ui.theme, value as HerdrVisualsSettings["summaryColor"]);
-     preview = `Continue the same task title · ${style.fg}${style.dim ? " · dim" : ""}; not applied yet.`;
+    const labels = values.map(value => value === "default" ? key === "theme" ? defaultHerdrLabel(ctx.ui.theme) : "Default" : value);
+    const title = `${key === "theme" ? "Theme" : "Summary color"}\n${scope(deps)}`;
+    const previewAt = (index: number) => buildHerdrPreview(ctx.ui.theme, settings, key, values[index]!);
+    let index: number | undefined;
+    if (typeof ctx.ui.custom === "function") {
+     index = await ctx.ui.custom<number | undefined>((tui, _theme, keybindings, done) => createHerdrChoiceList({
+      title, options: labels, current: values.indexOf(settings[key]), preview: previewAt,
+      keybindings, requestRender: () => tui.requestRender(), done,
+     }));
+    } else {
+     const marked = labels.map((label, i) => `${label}${values[i] === settings[key] ? " (current)" : ""}`);
+     const selected = await ctx.ui.select(title, marked);
+     index = selected === undefined ? undefined : marked.indexOf(selected);
     }
+    if (index === undefined || index < 0 || index >= values.length) continue;
+    const value = values[index]!;
+    const preview = previewAt(index).join("\n");
     if (!await ctx.ui.confirm(`Save ${key === "theme" ? "theme" : "summary color"}: ${value}?\n${scope(deps)}`, preview)) continue;
     // Preserve any unrelated preference changed while the user was deciding.
     deps.write({ ...checkedHerdrSettings(deps), [key]: value });
