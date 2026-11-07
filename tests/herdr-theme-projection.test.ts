@@ -111,8 +111,8 @@ test("bad or missing concrete colors cannot leak malformed hex into a proposal",
 test("default adds the Gentleman.Dots fixed values that the Gentle palette does not define", () => {
 	const cute = { panel_bg: "#000000", surface0: "#241822", surface1: "#342230", surface_dim: "#20161E", overlay0: "#B99AA9" };
 	assert.deepEqual(projectHerdrTheme({ ...palette(), name: "Gentleman-Cute" }, "default"), { name: "one-dark", custom: { ...expected, ...cute } });
-	// Sexy keeps Cute's surfaces but shows its own hot pink in sidebar text, details and the active row.
-	const sexy = { ...cute, overlay0: "#FF4F9A", overlay1: "#B99AA9", active_row_bg: "#2E0F1F", selection_bg: "#2E0F1F" };
+	// Sexy keeps Cute's surfaces; session names are fuchsia, branches grayish pink, and the active row wine.
+	const sexy = { ...cute, subtext0: "#FF4F9A", mauve: "#B99AA9", active_row_bg: "#2E0F1F", selection_bg: "#2E0F1F" };
 	assert.deepEqual(projectHerdrTheme({ ...palette(), name: "Gentleman-Sexy" }, "default"), { name: "one-dark", custom: { ...expected, ...sexy } });
 	assert.deepEqual(projectHerdrTheme({ ...palette(), name: "Gentle" }, "default"), { name: "one-dark", custom: { ...expected, panel_bg: "#06080f" } });
 	for (const name of ["dark", "light", "Other-Theme", undefined]) {
