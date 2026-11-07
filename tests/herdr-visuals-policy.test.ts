@@ -8,6 +8,21 @@ import { DEFAULT_HERDR_VISUALS_SETTINGS, HERDR_SUMMARY_COLORS, HERDR_VISUALS_SCH
 	isHerdrVisualsSettings, resolveHerdrVisualsSettings, writeHerdrVisualsSettings,
 	type HerdrVisualsSettings } from "../lib/herdr-visuals-policy.ts";
 
+test("v1 stores migrate to v2 with same-as-client machines; machine choices are strict", () => {
+ const { options, file } = fixture();
+ writeFileSync(file, JSON.stringify({ schema: "gentle-herdr.preferences/v1", theme: "nord", summaryColor: "default" }));
+ const resolved = resolveHerdrVisualsSettings(options);
+ assert.equal(resolved.malformed, false);
+ assert.deepEqual(resolved.settings.machines, {});
+ const settings = { ...resolved.settings, machines: { office: { theme: "same" as const }, lab: { theme: "default" as const } } };
+ writeHerdrVisualsSettings(settings, options);
+ assert.equal(JSON.parse(readFileSync(file, "utf8")).schema, "gentle-herdr.preferences/v2");
+ assert.deepEqual(resolveHerdrVisualsSettings(options).settings, settings);
+ for (const machines of [[], null, { a: { theme: "unknown" } }, { a: { theme: "same", extra: true } }]) {
+  assert.equal(isHerdrVisualsSettings({ theme: "default", summaryColor: "default", machines }), false);
+ }
+});
+
 function fixture() {
 	const root = resolve("tests/.fixtures/visuals-policy");
 	mkdirSync(root, { recursive: true });
@@ -18,11 +33,18 @@ function record(settings = DEFAULT_HERDR_VISUALS_SETTINGS) {
 	return JSON.stringify({ schema: HERDR_VISUALS_SCHEMA, ...settings });
 }
 
+test("oversized machine preference maps refuse writing an unreadable store", () => {
+ const { options, home } = fixture();
+ const machines = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`machine-${i}`, { theme: "same" as const }]));
+ assert.throws(() => writeHerdrVisualsSettings({ theme: "default", summaryColor: "default", machines }, options), /[Oo]versized/);
+ assert.deepEqual(readdirSync(home), []);
+});
+
 test("missing package preferences default without bootstrap; exact package path and schema", () => {
 	const { options, file, home } = fixture();
-	assert.equal(HERDR_VISUALS_SCHEMA, "gentle-herdr.preferences/v1");
+	assert.equal(HERDR_VISUALS_SCHEMA, "gentle-herdr.preferences/v2");
 	assert.deepEqual(resolveHerdrVisualsSettings(options), {
-		settings: { theme: "default", summaryColor: "default" }, globalFile: file, source: "default",
+		settings: { theme: "default", summaryColor: "default", machines: {} }, globalFile: file, source: "default",
 		malformed: false, readError: false,
 	});
 	resolveHerdrVisualsSettings(options).settings.summaryColor = "error";
@@ -69,8 +91,8 @@ test("all supported choices write a strict private atomic package record", () =>
 		for (const summaryColor of ["default", ...HERDR_SUMMARY_COLORS] as const) {
 			const settings = { theme, summaryColor };
 			assert.equal(writeHerdrVisualsSettings(settings, options), file);
-			assert.deepEqual(JSON.parse(readFileSync(file, "utf8")), { schema: "gentle-herdr.preferences/v1", ...settings });
-			assert.deepEqual(resolveHerdrVisualsSettings(options).settings, settings);
+			assert.deepEqual(JSON.parse(readFileSync(file, "utf8")), { schema: "gentle-herdr.preferences/v2", ...settings, machines: {} });
+			assert.deepEqual(resolveHerdrVisualsSettings(options).settings, { ...settings, machines: {} });
 			assert.equal(statSync(file).mode & 0o777, 0o600);
 			assert.equal(statSync(file).nlink, 1);
 			assert.deepEqual(readdirSync(home), ["gentle-herdr.json"]);

@@ -5,6 +5,25 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { startHerdrThemeWatch } from "../lib/herdr-theme-watch.ts";
 import type { HerdrMenuDependencies } from "../lib/herdr-visuals-menu.ts";
 
+test("watch re-applies only effective Default machines even with native local; one failure notice per change", async () => {
+ let tick!: () => Promise<void>, name = "first", local = 0, native = true;
+ const calls: string[] = [], notices: string[] = [];
+ const colors = Object.fromEntries(["accent", "text", "muted", "error", "success", "thinkingText", "borderAccent"].map(k => [k, parseColor("#123456")]));
+ const ctx = { ui: { get theme() { return { name, colors }; }, notify: (text: string) => notices.push(text) } } as unknown as ExtensionContext;
+ const deps: HerdrMenuDependencies = {
+  read: () => ({ settings: { theme: native ? "nord" : "default", summaryColor: "default", machines: { a: { theme: "default" }, b: { theme: "same" }, c: { theme: "default" } } }, malformed: false, readError: false, source: "default", globalFile: "/unused" }),
+  write() { assert.fail(); }, availability: () => ({ available: true }), application: async () => { local++; return { status: "requested" }; },
+  machines: async () => ["a", "b", "c"].map(id => ({ id, label: id, target: id, enabled: true })),
+  remote: async machine => { calls.push(machine.id); return { id: machine.id, label: machine.label, status: "auth" }; },
+ };
+ const stop = startHerdrThemeWatch(ctx, deps, { every: cb => { tick = cb; return { unref() {} }; }, clear() {} });
+ name = "next"; await tick(); await tick();
+ assert.deepEqual(calls, ["a", "c"]); assert.equal(local, 0); assert.equal(notices.length, 1);
+ native = false; name = "third"; await tick(); await tick();
+ assert.deepEqual(calls, ["a", "c", "a", "b", "c"]); assert.equal(local, 1); assert.equal(notices.length, 2);
+ stop();
+});
+
 test("watch applies once per palette/name change, never on start; stops and unrefs", async () => {
  let tick!: () => Promise<void>, unrefs = 0, stops = 0, calls = 0;
  let native = false, available = true, malformed = false;

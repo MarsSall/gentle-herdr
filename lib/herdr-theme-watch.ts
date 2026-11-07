@@ -24,9 +24,9 @@ export function startHerdrThemeWatch(ctx: ExtensionContext, deps: HerdrMenuDepen
    previous = next;
    if (!deps.availability().available) return;
    const settings = checkedHerdrSettings(deps);
-   if (settings.theme !== "default") return;
+   if (settings.theme !== "default" && !Object.values(settings.machines ?? {}).some(machine => machine.theme === "default")) return;
    busy = true;
-   const result = await applyMenuPreferences(ctx, deps, settings);
+   const result = await applyMenuPreferences(ctx, deps, settings, true);
    if (!stopped && result.status !== "unavailable") notifyHerdrResult(ctx, result);
   } catch (error) {
    if (!stopped) ctx.ui.notify(`Herdr theme re-apply: ${error instanceof Error ? error.message : String(error)}`, "warning");

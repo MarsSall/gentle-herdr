@@ -6,6 +6,64 @@ import { HERDR_NATIVE_THEMES } from "../lib/herdr-native-themes.ts";
 import { HERDR_SUMMARY_COLORS, type HerdrVisualsSettings } from "../lib/herdr-visuals-policy.ts";
 import { openHerdrVisualsMenu, type HerdrMenuDependencies } from "../lib/herdr-visuals-menu.ts";
 
+test("Machines selects per-machine theme, saves first, applies locally then isolates each machine", async () => {
+ const h = fixture(["Machines", "Office", "nord", "Close"]);
+ h.deps.machines = async () => [{ id: "a", label: "Office", target: "office", enabled: true }, { id: "b", label: "Lab", target: "lab", enabled: true }];
+ h.deps.remote = async (machine, projection) => {
+  h.order.push(machine.id);
+  if (machine.id === "a") { assert.equal(projection.theme.name, "nord"); throw new Error("SECRET"); }
+  return { id: machine.id, label: machine.label, status: "applied" };
+ };
+ await openHerdrVisualsMenu(h.ctx, h.deps);
+ assert.equal(h.settings().machines?.a?.theme, "nord");
+ assert.deepEqual(h.order, ["save", "apply", "a", "b"]);
+ assert.match(h.lists.flat().join("\n"), /Same as this computer.*current/);
+ assert.match(h.notes.join(), /Office: unreachable.*Lab: applied/);
+ assert.doesNotMatch(h.notes.join(), /SECRET/);
+});
+test("Apply now includes same/native/Default machines after a local failure and isolates discovery failure", async () => {
+ const h = fixture(["Apply now", "Close"]);
+ h.seed({ theme: "nord", summaryColor: "error", machines: { b: { theme: "default" }, c: { theme: "dracula" } } });
+ h.deps.application = async () => { h.order.push("local"); return { status: "partial", stage: "config", error: "bad local config" }; };
+ h.deps.machines = async () => ["a", "b", "c"].map(id => ({ id, label: id, target: id, enabled: true }));
+ h.deps.remote = async (machine, projection) => {
+  h.order.push(machine.id);
+  assert.equal(projection.theme.name, machine.id === "a" ? "nord" : machine.id === "b" ? "one-dark" : "dracula");
+  return { id: machine.id, label: machine.label, status: "unchanged" };
+ };
+ await openHerdrVisualsMenu(h.ctx, h.deps);
+ assert.deepEqual(h.order, ["local", "a", "b", "c"]);
+ const bad = fixture(["Apply now", "Close"]);
+ bad.deps.machines = async () => { throw new Error("SECRET"); };
+ bad.deps.remote = async () => assert.fail();
+ await openHerdrVisualsMenu(bad.ctx, bad.deps);
+ assert.deepEqual(bad.order, ["apply"]); assert.match(bad.notes.join(), /discovery failed/); assert.doesNotMatch(bad.notes.join(), /SECRET/);
+});
+test("Machines custom preview cancellation never saves or applies", async () => {
+ const h = fixture(["Machines", "Office", "Close"]);
+ h.deps.machines = async () => [{ id: "a", label: "Office", target: "office", enabled: true }];
+ h.ctx.ui.custom = async factory => {
+  let result: unknown;
+  const component = await factory({ requestRender() {} } as never, h.ctx.ui.theme,
+   { matches: (data: string, key: string) => data === key } as never, value => { result = value; });
+  component.handleInput?.("tui.select.down");
+  assert.match(component.render(100).join("\n"), /Default.*follows/);
+  component.handleInput?.("tui.select.cancel");
+  return result as never;
+ };
+ await openHerdrVisualsMenu(h.ctx, h.deps);
+ assert.deepEqual(h.order, []); assert.deepEqual(h.confirms, []);
+});
+
+test("remote session explains client Machines and never discovers or applies remotes", async () => {
+ const h = fixture(["Machines", "Apply now", "Close"]);
+ h.deps.availability = () => ({ available: false, reason: "remote" });
+ h.deps.machines = async () => assert.fail("remote guard must precede discovery");
+ await openHerdrVisualsMenu(h.ctx, h.deps);
+ assert.match(h.titles.join(), /pane borders.*Machines.*client/i);
+ assert.deepEqual(h.order, []);
+});
+
 export function fixture(choices: (string | undefined)[] = []) {
  let settings: HerdrVisualsSettings = { theme: "default", summaryColor: "default" };
  const notes: string[] = [], titles: string[] = [], lists: string[][] = [], order: string[] = [], confirms: string[] = [];

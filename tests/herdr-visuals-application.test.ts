@@ -19,9 +19,15 @@ function fixture(t: test.TestContext) {
 	fs.writeFileSync(path, before, { mode: 0o640 });
 	const reloads: string[] = [];
 	const apply = createHerdrVisualsApplication({ configPath: path, reload: async () => { reloads.push(fs.readFileSync(path, "utf8")); } });
-	t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
+	t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); fs.rmSync(home, { recursive: true, force: true }); });
 	return { home, path, before, reloads, apply, bytes: () => fs.readFileSync(path, "utf8") };
 }
+
+test("application fixture removes its OS-temp directory after the test", async t => {
+ let home = "";
+ await t.test("fixture lifetime", child => { home = fixture(child).home; });
+ assert.equal(fs.existsSync(home), false);
+});
 
 test("service commits owned bytes before reload, preserves permissions, and is idempotent", async t => {
 	const h = fixture(t), expected = planHerdrVisualsConfig(h.before, projection); assert.ok(expected.ok);
