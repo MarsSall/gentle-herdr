@@ -1,79 +1,151 @@
 # gentle-herdr
 
-Herdr visuals for Gentle Shell users: choose a native Herdr theme or follow your live Pi palette, and style the task-summary rows. This standalone Pi package adds **`/gentle:herdr`**; it does not require a change to Gentle Shell.
+**Make Herdr look like your Gentle Shell, on every machine you use.**
 
-## Install and use
+`gentle-herdr` is a [Pi](https://pi.dev) package for [Gentle Shell](https://github.com/Gentleman-Programming/gentle-shell) users who work inside [Herdr](https://herdr.dev). One command, `/gentle:herdr`, sets Herdr's theme, styles the task-summary rows in the sidebar, and colors the pane borders of each machine you connect to. You never hand-edit `config.toml`.
 
 ```sh
-pi install git:github.com/MarsSall/gentle-herdr
+pi install git:github.com/MarsSall/gentle-herdr@v0.1.0
 ```
 
-In an interactive Pi terminal running inside a supported local Herdr pane, run `/gentle:herdr`:
+## Highlights
 
-- **Theme** — Default follows your active Gentle Shell theme (named in the menu), plus every supported native Herdr theme; the current preference is marked.
-- **Summary color** — Default or accent, text, muted, dim, success, warning, error.
-- **Machines** — choose a theme for each enabled saved Herdr machine: **Same as this computer** (the default), **Default**, or a native theme, with the current choice marked and the same preview as Theme.
-- **Apply now** — apply the saved preferences locally first, then to each enabled saved machine.
-- **Remove from Herdr config** — remove package-owned blocks without deleting preferences.
-- **Close** — leave without changes.
+| | |
+|---|---|
+| 🎨 **Follows your Gentle Shell theme** | The **Default** theme takes its colors from your active Gentle Shell theme and updates when you switch themes. |
+| 👀 **Live preview** | See a mock Herdr sidebar with the real colors while you move through the list, before anything is saved. |
+| 🖥️ **Per-machine pane borders** | Give each saved Herdr machine its own theme, so you can tell at a glance which machine a pane runs on. |
+| 🛡️ **Safe config edits** | Only the package's own stamped blocks change. Your comments, layout and custom colors stay untouched, and anything ambiguous is refused, not guessed. |
+| 🪟 **Linux and Windows** | Works with local Herdr on Linux and Windows. Saved machines can be Linux, macOS or BSD. |
 
-Theme and Summary color lists update a preview as you move the highlight with Up/Down. Default shows a mock sidebar using the live Gentle Shell projection, including secondary text and both summary rows; summary colors preview both rows. Native themes describe Herdr's built-in theme by name, without invented palette colors; summary previews for native themes use the terminal default background. The preview is illustrative: Herdr's native status colors and your custom overrides may differ. Enter opens confirmation; Esc cancels. Older hosts without custom UI fall back to a standard list and confirmation preview. Highlighting never saves or applies. Confirmation saves the preference **first**, then applies it locally and to enabled saved machines. A changed config requests `herdr server reload-config`; the notice distinguishes requested, unchanged, unavailable, config failure and reload failure. “Reload requested” is not proof that the client rendered the result.
+## Quick start
 
-Preferences live in `gentle-herdr.json` inside Pi's SDK `getAgentDir()` directory. Writes use schema v2 with a per-machine theme map keyed by saved machine ID; v1 stores still load, treating every machine as **Same as this computer**. Reads and writes are bounded to 4 KiB; an oversized preference map is refused before writing. Malformed or unreadable preferences are refused, not overwritten. Opening the menu or cancelling a preview writes nothing.
+1. **Install** the package (above) and restart Pi, or run `/reload`.
+2. In a Pi session **inside Herdr**, run `/gentle:herdr`.
+3. Pick a **Theme**. Move with ↑/↓ to preview, and press Enter to confirm.
+4. Herdr reloads its config, and the new colors show up right away.
 
-## What changes in Herdr
+Optional: open **Machines** to give a saved machine its own pane-border theme.
 
-The package edits only Gentle-owned, hash-stamped blocks and recognized `theme.name` and `$summary`/`$summary2` styles. Applying ensures both summary rows exist. It preserves other rows, comments, ordering and original line endings, and refuses ambiguous or unsupported TOML without writing.
+## The menu
 
-**User `[theme.custom]` colors are never rewritten**, including hex, named and `reset` values. Herdr layers these over the selected base, so your overrides can change the visible result. Package-owned projection blocks are separate from user custom colors.
+| Entry | What it does |
+|---|---|
+| **Theme** | **Default** follows your active Gentle Shell theme, and the menu names it, for example *Default (follows your Gentle Shell theme: Gentleman-Cute)*. You can also pick any built-in Herdr theme (catppuccin, tokyo-night, dracula, nord, gruvbox, one-dark, solarized, kanagawa, rose-pine, vesper, terminal). |
+| **Summary color** | Color of the two task-summary rows in the sidebar: Default (your accent, dimmed), accent, text, muted, dim, success, warning or error. |
+| **Machines** | A theme for each enabled saved Herdr machine: **Same as this computer**, **Default** or a built-in theme. |
+| **Apply now** | Apply your saved choices again, here first and then on every saved machine. |
+| **Remove from Herdr config** | Remove only what this package added. |
 
-Default uses the `one-dark` base, projects live Gentle text colors (including sidebar secondary text), and adds the Gentleman.Dots profile values absent from the Pi palette. Cute/Sexy use the profile's black panel and surfaces; Sexy also gets fuchsia session names, grayish pink branches and a wine active row, so it looks different from Cute. Neutral Gentle uses its panel color. Status and notification colors stay native. Default summary color follows Pi's accent with dim styling, including when a native Herdr theme is selected.
+Highlighting never saves anything. **Enter** asks for confirmation, and **Esc** cancels.
 
-While Theme is **Default**, a lightweight watcher checks the active Pi theme every 500 ms and re-applies once per observed name/palette change, using the same local-client guards. It never applies merely on session startup, never retries an unchanged theme, and stops at session shutdown. Native Theme choices disable local automatic re-apply, even with Default summary color; use Apply now to refresh that color. Saved machines whose effective theme is Default also re-apply on a palette change, even if this computer uses a native theme. Each change produces at most one notice, including any per-machine failures.
+## Who draws what
 
-## Local, SSH and Windows
+Herdr splits the rendering between the computer you sit at (the **client**) and the machine where each session runs. `gentle-herdr` writes the right config on each side.
 
-Herdr reads theme and sidebar from the **client machine's own config**, even when viewing an SSH machine. Pane borders, however, come from the server machine's config. Remote menus explain this before confirmation: preferences can be saved there, but nothing is applied from that machine. To configure that machine's pane borders, run `/gentle:herdr` → **Machines** on the client instead. Child sessions and known `herdr-dev` binaries are also refused before config access; the watcher is not registered in child sessions.
+```mermaid
+flowchart LR
+    subgraph Client["Your computer (Herdr client)"]
+        S["Sidebar, menus, theme<br/>task-summary rows"]
+        B1["Pane borders of<br/>local sessions"]
+    end
+    subgraph Remote["Saved machine (e.g. a mini PC)"]
+        B2["Pane borders of<br/>its sessions"]
+    end
+    G["/gentle:herdr<br/>on the client"] -->|local config| Client
+    G -->|SSH, saved machines| Remote
+```
 
-Supported targets are local Linux and Windows Herdr panes. Linux uses `$XDG_CONFIG_HOME/herdr/config.toml` or `$HOME/.config/herdr/config.toml`. Windows uses `%APPDATA%\herdr\config.toml`. `HERDR_CONFIG_PATH` can select an explicit supported local path. The config must already exist; the package does not bootstrap it.
+- **The sidebar is always drawn by the client**, so it looks the same for every session.
+- **Pane borders are drawn by the machine where the session runs**, which is why each machine can have its own colors.
+- Run `/gentle:herdr` **on the client**. In a remote session the menu explains this and applies nothing.
 
-Windows writes use a fixed PowerShell helper, protected staging on NTFS, and `File.Replace`, with original-file recovery on replacement failure. Config errors do not request reload. Reload errors leave committed config in place and report unknown client state rather than claiming success.
+## Gentle Shell themes
 
-## Saved machines over SSH
+With **Default**, Herdr uses the `one-dark` base plus your live Gentle Shell colors, and the Gentleman.Dots profile values the palette doesn't define:
 
-On the local client, open **Machines**, choose an enabled saved machine, and confirm its theme. Applying from Theme, Summary color, Machines, or Apply now updates this computer first, then each enabled saved machine. **Same as this computer** follows this computer's saved theme choice; a machine's **Default** follows the client's live Gentle Shell palette. The saved summary color is shared. Results are reported per machine; one failure does not stop the others or undo a local apply.
+| Gentle Shell theme | In Herdr |
+|---|---|
+| **Gentleman-Cute** | Black panel, soft pink surfaces and text. |
+| **Gentleman-Sexy** | Same surfaces as Cute, plus **fuchsia session names**, **grayish pink branches** and a **wine active row**. |
+| **Gentle** | Its own dark panel color. |
+| Any other theme | Live text colors over `one-dark`. |
 
-Requirements:
+Status and notification colors (working, done and so on) keep Herdr's own colors.
 
-- A saved machine visible in `herdr machine list --json`, with key-based SSH and an already trusted host key. SSH uses `BatchMode=yes` and a 10-second connection timeout; it never asks for passwords or host-key approval.
-- A Linux, Darwin or *BSD remote (`uname -s` is checked), with `sh`, `sha256sum`, `head -c`, `mktemp`, hard links, standard file utilities, and GNU or BSD `stat`. All other platforms, including Windows with MINGW/MSYS/Cygwin POSIX tools, are refused with a dedicated unsupported status (local Windows remains supported).
-- Permission to read the config and create/rename files in its directory. Remote commands have a bounded wall time; config content is limited to 256 KiB.
+## Saved machines
 
-The remote resolves `$HERDR_CONFIG_PATH`, otherwise `${XDG_CONFIG_HOME:-$HOME/.config}/herdr/config.toml`. A missing remote config is treated as empty and may be created (unlike local configs). Content and the expected SHA-256 travel only over SSH stdin, never as command-line values. Planning runs on the client with the same ownership/TOML safeguards: only stamped blocks, recognized theme name and summary styles change; user custom colors remain untouched.
+To configure another machine's pane borders from your client:
 
-Writes stage privately beside the remote config and preserve an existing file's mode (new files are 0600). The current config is atomically moved to a private sibling backup (or noted absent), then that copy's SHA-256/expected absence is verified. A mismatch reports **conflict** and restores the original with a no-overwrite hard link. Commit also uses a no-overwrite hard link from staging to the config path: if another file appeared, it stays untouched, no reload is requested, and the original remains beside it as `config.toml.gentle-herdr.backup.<nonce>` (using the actual config basename). The structured conflict result reports only the backup basename, never its full path. Successful writes remove the backup and staging names. An existing package lock also reports conflict. Re-open/apply after resolving the conflict; there is no automatic retry. A fixed `committed` acknowledgement requests `herdr --machine <label> server reload-config` even if the write process subsequently exits nonzero. **reload-failed** means the remote config was updated but the reload was not confirmed; **auth**, **unreachable**, **unsupported**, and **invalid-config** are isolated to that machine. Notices never include remote config contents or raw SSH errors.
+1. Add it to Herdr as a **saved machine**, so it appears in `herdr machine list`.
+2. Make sure you can log in with an **SSH key and a trusted host key**:
+   ```sh
+   ssh -o BatchMode=yes <target> true
+   ```
+3. In `/gentle:herdr` → **Machines**, pick the machine and its theme, then confirm.
 
-Limitations: this is not a transaction across machines. The config path is briefly absent between moving the original aside and linking the staged file (or restoring the original). The lock serializes this package's writers, not unrelated editors: a writer still holding the old file open can write in place after the hash check; those later bytes are not guaranteed to reach the committed config. Avoid concurrent in-place editing. HUP/INT/TERM handlers clean staging/locks, restore without overwriting, and exit with 128+signal; SIGKILL, host failure, or a lost SSH acknowledgement can still leave staging/lock/backup names or an unacknowledged committed write requiring manual inspection (no automatic retry). On conflict, any external file at the config path is kept, and a displaced original that cannot be restored without overwriting is retained as a clearly named sibling backup; only its basename is reported. Removal below affects this computer only; remote blocks are not removed automatically. Native previews do not fetch remote palettes, and user overrides can change the visible result.
+You get one result per machine: `applied`, `unchanged`, `conflict`, `auth`, `unreachable`, `unsupported`, `invalid-config` or `reload-failed`. One failure never stops the other machines or undoes your local change.
+
+> [!NOTE]
+> Saved machines must run Linux, macOS or BSD. Remote Windows servers are refused. SSH never prompts for a password or a host key.
+
+## Safety
+
+| Guarantee | How |
+|---|---|
+| Your settings survive | Only hash-stamped, package-owned blocks, `theme.name` and the `$summary` styles change. Comments, ordering and line endings are preserved. |
+| Your colors win | Colors you set in `[theme.custom]` are never rewritten. |
+| No guessing | Ambiguous or unsupported TOML is refused without writing. |
+| No lost edits on remote machines | If the remote config changed since it was read, or anything appeared in its place, the write stops with **conflict**, and your original is kept as a named backup. |
+| Nothing leaks | Config content travels only over SSH stdin. Notices never include file contents or raw SSH errors. |
+| Atomic writes | Local files are replaced atomically. On Windows a fixed PowerShell helper uses `File.Replace` with recovery. |
+
+<details>
+<summary><strong>Technical details and limitations</strong></summary>
+
+**Preferences** live in `gentle-herdr.json` inside Pi's agent directory (`getAgentDir()`). The store uses schema v2 and still reads v1. Reads and writes are bounded to 4 KiB, and malformed files are refused, not overwritten.
+
+**Config paths.** Locally, `HERDR_CONFIG_PATH` if set, otherwise `$XDG_CONFIG_HOME/herdr/config.toml` or `~/.config/herdr/config.toml` on Linux, and `%APPDATA%\herdr\config.toml` on Windows. The local config must already exist. On a remote machine, `$HERDR_CONFIG_PATH` or `${XDG_CONFIG_HOME:-$HOME/.config}/herdr/config.toml`. A missing remote config is created with mode 0600.
+
+**Remote write protocol.** The current config is moved aside to a private sibling and its SHA-256 is checked against what was read. The new file is committed with a no-overwrite hard link, verified by regular-file type and device/inode. A mismatch, or a file, directory or link that appeared in the meantime, is a conflict: the external entry stays untouched and the original remains as `config.toml.gentle-herdr.backup.<nonce>`. Only the backup's basename is reported. `herdr --machine <label> server reload-config` runs only after a verified commit. Remote requirements: `sh`, `sha256sum`, `head -c`, `mktemp`, hard links, and GNU or BSD `stat`. Config content is limited to 256 KiB.
+
+**Automatic re-apply.** While Theme is **Default**, a lightweight watcher checks the active Pi theme every 500 ms and re-applies once per change, to this computer and to saved machines whose theme is Default. It produces at most one notice per change. It never runs in child sessions.
+
+**Limitations.**
+- There is no transaction across machines.
+- On a remote machine, the config path is briefly absent while the file is swapped.
+- An editor that keeps the old file open and writes in place right after the hash check can lose those bytes. Avoid editing the remote config at the same time as you apply.
+- SIGKILL, a host failure or a lost SSH acknowledgement can leave staging, lock or backup files that need manual cleanup. HUP, INT and TERM clean up and exit with 128+signal.
+- **Remove from Herdr config** only affects this computer.
+- Previews of built-in Herdr themes show their name only, because Herdr does not expose their palettes.
+- "Reload requested" confirms the reload, not what the client rendered.
+
+</details>
 
 ## Remove and uninstall
 
-1. On the local client, choose **Remove from Herdr config** and confirm. Only intact package-owned blocks are removed; adopted user settings remain. Edited or ambiguous owned blocks fail closed rather than guessing what to remove.
-2. Uninstall the Pi package:
-
+1. `/gentle:herdr` → **Remove from Herdr config**. This removes only the package's own blocks. Edited or ambiguous blocks are refused rather than guessed.
+2. Uninstall:
    ```sh
    pi remove git:github.com/MarsSall/gentle-herdr
    ```
 
-Uninstalling alone does not undo Herdr config edits. The package preference file is retained; removing config blocks does not reset it, and later Apply now or a Default theme change can apply the saved styling again while the extension remains active.
+Uninstalling alone does not undo config edits, so run step 1 first. Your preferences file is kept.
 
 ## Relationship to Gentle Shell
 
-Gentle Shell owns the task-summary **text and on/off setting**: `/gentle:customize` → **Layout**. This package only styles Herdr. It never publishes activity, writes `herdr-task-summary.json`, or offers a task-summary visibility toggle. Summary rows can therefore be styled even when Gentle Shell's publisher is off.
+Gentle Shell owns the task-summary **text and its on/off switch** (`/gentle:customize` → **Layout**) and publishes the agent status. This package only **styles** Herdr: it never publishes activity and never changes Gentle Shell's settings. It doesn't need any change to Gentle Shell either.
 
 ## Development
 
-Requires Node.js 22+ and the Pi host peer packages. Run `npm test` and `npm run typecheck`. Tests use controlled fixtures and application stubs, not your real Herdr config or binary. Windows/NTFS replacement checks require Windows; live rendering and reload behavior should also be checked with a real Pi/Herdr client.
+```sh
+npm install
+npm test          # node --test with type stripping; never touches your real Herdr config
+npm run typecheck
+```
+
+Requires Node.js 22+. The Windows/NTFS replacement tests only run on Windows.
 
 ## License
 
-[MIT](LICENSE). Based on the original Gentle Shell Herdr visuals contribution; see the license for attribution.
+[MIT](LICENSE). Based on the author's original Herdr visuals contribution to Gentle Shell ([#2392](https://github.com/Gentleman-Programming/gentle-shell/issues/2392)).
