@@ -137,7 +137,7 @@ You get one result per machine: `applied`, `unchanged`, `conflict`, `auth`, `unr
 
 **Remote write protocol.** The current config is moved aside to a private sibling and its SHA-256 is checked against what was read. The new file is committed with a no-overwrite hard link, verified by regular-file type and device/inode. A mismatch, or a file, directory or link that appeared in the meantime, is a conflict: the external entry stays untouched and the original remains as `config.toml.gentle-herdr.backup.<nonce>`. Only the backup's basename is reported. `herdr --machine <label> server reload-config` runs only after a verified commit. Remote requirements: `sh`, `sha256sum`, `head -c`, `mktemp`, hard links, and GNU or BSD `stat`. Config content is limited to 256 KiB.
 
-**Automatic re-apply.** While Theme is **Default**, a lightweight watcher checks the active Pi theme every 500 ms and re-applies once per change, to this computer and to saved machines whose theme is Default. It produces at most one notice per change. It never runs in child sessions.
+**Automatic re-apply.** While Theme is **Default**, a lightweight watcher checks the active Gentle Shell theme every 500 ms and re-applies once per change, to this computer and to saved machines whose theme is Default. It produces at most one notice per change. It never runs in child sessions.
 
 **Limitations.**
 - There is no transaction across machines.
