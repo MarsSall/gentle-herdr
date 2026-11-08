@@ -13,7 +13,7 @@
 `gentle-herdr` is an extension for [Gentle Shell](https://github.com/Gentleman-Programming/gentle-shell) users who work inside [Herdr](https://herdr.dev). One command, `/gentle:herdr`, sets Herdr's theme, styles the task-summary rows in the sidebar, and colors the pane borders of each machine you connect to. You never hand-edit `config.toml`.
 
 ```sh
-gentle-shell install git:github.com/MarsSall/gentle-herdr@v0.1.0
+gentle-shell install git:github.com/MarsSall/gentle-herdr@v0.1.1
 ```
 
 <a id="stack"></a>
