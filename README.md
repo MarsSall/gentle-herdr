@@ -1,31 +1,19 @@
 <a id="top"></a>
 
 <p align="center">
-  <img src="./docs/assets/brand/gentle-herdr-banner.svg" width="1200" alt="gentle-herdr: a neon ram holding the Gentle Shell rose. Gentle Shell colors for Herdr, on every machine." />
+  <img src="./docs/assets/brand/gentle-herdr-banner.svg" width="1200" alt="gentle-herdr: a neon ram next to the Gentle Shell rose. Gentle Shell colors for Herdr, on every machine." />
 </p>
 
 <h1 align="center">gentle-herdr</h1>
 
 <p align="center"><strong>Make Herdr look like your Gentle Shell, on every machine you use.</strong></p>
 
-<div align="center">
-
-[![Release](https://img.shields.io/github/v/tag/MarsSall/gentle-herdr?style=for-the-badge&labelColor=1A1218&color=F095C8&label=release)](https://github.com/MarsSall/gentle-herdr/tags)
-[![License](https://img.shields.io/github/license/MarsSall/gentle-herdr?style=for-the-badge&labelColor=1A1218&color=D7A0B8)](./LICENSE)
-[![Last commit](https://img.shields.io/github/last-commit/MarsSall/gentle-herdr?style=for-the-badge&labelColor=1A1218&color=F43888)](https://github.com/MarsSall/gentle-herdr/commits/main)
-[![Stars](https://img.shields.io/github/stars/MarsSall/gentle-herdr?style=for-the-badge&labelColor=1A1218&color=D7A0B8)](https://github.com/MarsSall/gentle-herdr/stargazers)
-
-![Pi package](https://img.shields.io/badge/Pi-package-F095C8?style=for-the-badge&labelColor=1A1218)
-![Linux · Windows](https://img.shields.io/badge/Linux%20%C2%B7%20Windows-D7A0B8?style=for-the-badge&labelColor=1A1218)
-
-</div>
-
 <p align="center"><strong><a href="#quick-start">Quick start</a> &nbsp;·&nbsp; <a href="#the-menu">Menu</a> &nbsp;·&nbsp; <a href="#saved-machines">Saved machines</a> &nbsp;·&nbsp; <a href="#safety">Safety</a></strong></p>
 
-`gentle-herdr` is a [Pi](https://pi.dev) package for [Gentle Shell](https://github.com/Gentleman-Programming/gentle-shell) users who work inside [Herdr](https://herdr.dev). One command, `/gentle:herdr`, sets Herdr's theme, styles the task-summary rows in the sidebar, and colors the pane borders of each machine you connect to. You never hand-edit `config.toml`.
+`gentle-herdr` is an extension for [Gentle Shell](https://github.com/Gentleman-Programming/gentle-shell) users who work inside [Herdr](https://herdr.dev). One command, `/gentle:herdr`, sets Herdr's theme, styles the task-summary rows in the sidebar, and colors the pane borders of each machine you connect to. You never hand-edit `config.toml`.
 
 ```sh
-pi install git:github.com/MarsSall/gentle-herdr@v0.1.0
+gentle-shell install git:github.com/MarsSall/gentle-herdr@v0.1.0
 ```
 
 <a id="stack"></a>
@@ -60,8 +48,8 @@ pi install git:github.com/MarsSall/gentle-herdr@v0.1.0
 
 ## Quick start
 
-1. **Install** the package (above) and restart Pi, or run `/reload`.
-2. In a Pi session **inside Herdr**, run `/gentle:herdr`.
+1. **Install** the extension (above) and restart Gentle Shell, or run `/reload`.
+2. In a Gentle Shell session **inside Herdr**, run `/gentle:herdr`.
 3. Pick a **Theme**. Move with ↑/↓ to preview, and press Enter to confirm.
 4. Herdr reloads its config, and the new colors show up right away.
 
@@ -165,9 +153,9 @@ You get one result per machine: `applied`, `unchanged`, `conflict`, `auth`, `unr
 ## Remove and uninstall
 
 1. `/gentle:herdr` → **Remove from Herdr config**. This removes only the package's own blocks. Edited or ambiguous blocks are refused rather than guessed.
-2. Uninstall:
+2. Uninstall the extension:
    ```sh
-   pi remove git:github.com/MarsSall/gentle-herdr
+   gentle-shell remove git:github.com/MarsSall/gentle-herdr
    ```
 
 Uninstalling alone does not undo config edits, so run step 1 first. Your preferences file is kept.
