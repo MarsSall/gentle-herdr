@@ -11,6 +11,11 @@ import { parseColor } from "@earendil-works/pi-tui";
 import { createHerdrVisualsApplication, localHerdrVisualsApplication } from "../lib/herdr-visuals-application.ts";
 import { planHerdrVisualsConfig, type HerdrVisualsProjection } from "../lib/herdr-visuals-config.ts";
 
+// Windows has no POSIX permission bits, and these cases simulate a Linux pane
+// (Windows targets are covered by tests/herdr-windows-target.test.ts).
+const POSIX_MODES = process.platform !== "win32";
+const LINUX_ONLY = process.platform === "win32" ? "simulates a Linux Herdr pane" : false;
+
 const projection: HerdrVisualsProjection = { theme: { name: "nord" }, taskSummaryStyle: { fg: "#abc123", dim: false, bold: false } };
 function fixture(t: test.TestContext) {
 	const home = fs.mkdtempSync(join(tmpdir(), "gentle-herdr-application-")), path = join(home, "config.toml");
@@ -33,7 +38,7 @@ test("service commits owned bytes before reload, preserves permissions, and is i
 	const h = fixture(t), expected = planHerdrVisualsConfig(h.before, projection); assert.ok(expected.ok);
 	assert.deepEqual(await h.apply(projection), { status: "requested" });
 	assert.equal(h.bytes(), expected.text); assert.deepEqual(h.reloads, [expected.text]);
-	assert.equal(fs.statSync(h.path).mode & 0o777, 0o640);
+	if (POSIX_MODES) assert.equal(fs.statSync(h.path).mode & 0o777, 0o640);
 	const inode = fs.statSync(h.path).ino;
 	assert.deepEqual(await h.apply(projection), { status: "unchanged" });
 	assert.equal(fs.statSync(h.path).ino, inode); assert.deepEqual(h.reloads, [expected.text]);
@@ -50,7 +55,7 @@ for (const mixed of [false, true]) test(`service first-adopts native theme and m
 	assert.deepEqual(await h.apply(projection), { status: 'requested' });
 	assert.equal(h.bytes(), styled);
 	assert.deepEqual(h.reloads, [styled]);
-	assert.equal(fs.statSync(h.path).mode & 0o777, 0o640);
+	if (POSIX_MODES) assert.equal(fs.statSync(h.path).mode & 0o777, 0o640);
 	const inode = fs.statSync(h.path).ino;
 	assert.deepEqual(await h.apply(projection), { status: 'unchanged' });
 	assert.equal(fs.statSync(h.path).ino, inode);
@@ -169,7 +174,7 @@ test("applying package preferences projects theme and summaryColor with both row
 
 const pane = { HERDR_ENV: "1", HERDR_PANE_ID: "fake", HERDR_SOCKET_PATH: "/owned-fake.sock" };
 
-test("menu preflight and both actions refuse unsafe contexts before any config access", async t => {
+test("menu preflight and both actions refuse unsafe contexts before any config access", { skip: LINUX_ONLY }, async t => {
 	t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
 	for (const name of ["realpathSync", "lstatSync", "openSync", "readFileSync"] as const) {
 		t.mock.method(fs, name, () => assert.fail("no config access"));
@@ -231,7 +236,7 @@ for (const binary of ["/owned fake/herdr-dev", "herdr-dev"] as const) for (const
 		{ result: { status: "unavailable" }, io: [], reloads: 0, ...before });
 });
 
-for (const source of ["override", "xdg", "home"] as const) test(`local ${source} resolution uses shell-free bounded supported reload`, async t => {
+for (const source of ["override", "xdg", "home"] as const) test(`local ${source} resolution uses shell-free bounded supported reload`, { skip: LINUX_ONLY }, async t => {
 	const h = fixture(t);
 	const root = join(h.home, "root"), config = source === "override" ? h.path : join(root, source === "home" ? ".config/herdr" : "herdr", "config.toml");
 	if (source !== "override") { fs.mkdirSync(join(config, ".."), { recursive: true }); fs.writeFileSync(config, h.before); }
@@ -301,7 +306,7 @@ test("service replaces legacy owned message backgrounds with native surfaces onl
 	assert.doesNotMatch(h.bytes(), /(?:sidebar_bg|panel_bg|active_row_bg|selection_bg) =/);
 	assert.match(h.bytes(), /accent = "#abcdef"/);
 	assert.ok(h.bytes().includes('# retained\n[server]\nport = 1234\n'));
-	assert.equal(fs.statSync(h.path).mode & 0o777, 0o640);
+	if (POSIX_MODES) assert.equal(fs.statSync(h.path).mode & 0o777, 0o640);
 	const before = h.bytes(), inode = fs.statSync(h.path).ino;
 	assert.deepEqual(h.reloads, [h.reloads[0], before]);
 	assert.deepEqual(await h.apply(current), { status: "unchanged" });
@@ -310,5 +315,5 @@ test("service replaces legacy owned message backgrounds with native surfaces onl
 	const invalid = { ...current, theme: { ...current.theme, custom: { ...current.theme.custom, surprise: "#123456" } } } as unknown as HerdrVisualsProjection;
 	assert.deepEqual(await h.apply(invalid), { status: "partial", stage: "config", error: "Invalid Herdr visuals projection; no changes proposed." });
 	assert.equal(h.bytes(), before); assert.equal(fs.statSync(h.path).ino, inode);
-	assert.equal(fs.statSync(h.path).mode & 0o777, 0o640); assert.equal(h.reloads.length, 2);
+	if (POSIX_MODES) assert.equal(fs.statSync(h.path).mode & 0o777, 0o640); assert.equal(h.reloads.length, 2);
 });

@@ -93,7 +93,7 @@ test("all supported choices write a strict private atomic package record", () =>
 			assert.equal(writeHerdrVisualsSettings(settings, options), file);
 			assert.deepEqual(JSON.parse(readFileSync(file, "utf8")), { schema: "gentle-herdr.preferences/v2", ...settings, machines: {} });
 			assert.deepEqual(resolveHerdrVisualsSettings(options).settings, { ...settings, machines: {} });
-			assert.equal(statSync(file).mode & 0o777, 0o600);
+			if (process.platform !== "win32") assert.equal(statSync(file).mode & 0o777, 0o600);
 			assert.equal(statSync(file).nlink, 1);
 			assert.deepEqual(readdirSync(home), ["gentle-herdr.json"]);
 		}
