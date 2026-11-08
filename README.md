@@ -176,4 +176,4 @@ Requires Node.js 22+. The Windows/NTFS replacement tests only run on Windows.
 
 ## License
 
-[MIT](LICENSE). Based on the author's original Herdr visuals contribution to Gentle Shell ([#2392](https://github.com/Gentleman-Programming/gentle-shell/issues/2392)).
+[MIT](LICENSE). Based on the author's original Herdr visuals contribution to Gentle Shell ([#2392](https://github.com/Gentleman-Programming/gentle-shell/issues/2392)). The rose in the banner is the Gentle Shell logo from [Gentleman-Programming/gentle-shell](https://github.com/Gentleman-Programming/gentle-shell).
